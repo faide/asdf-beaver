@@ -56,7 +56,7 @@ get_download_url() {
   local project_url
   project_url=$(get_project_url "${tool}")
 
-  local release_url="${project_url}/releases/v${version}"
+  local release_url="${project_url}/releases/${version}"
 
   release_json=$(curl --silent --fail "${release_url}")
   readonly release_json
