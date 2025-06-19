@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/../lib/utils.bash"
+
+tool_name=$(get_tool_name)
+
+project_url=$(get_project_url "${tool_name}")
+readonly project_url
+
+# SemVer sorting trick, see: https://github.com/stedolan/jq/issues/708
+curl -sSf "${project_url}/releases/" |
+  jq -r '
+    [(
+      .[] |
+      select(.upcoming_release == false) |
+      .name | sub("v"; "")
+    )] |
+    sort_by(split(".") | map(tonumber)) |
+    join(" ")
+  '

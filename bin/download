@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/../lib/utils.bash"
+
+check_installation_type
+
+tool_name=$(get_tool_name)
+
+readonly bin_path="${ASDF_DOWNLOAD_PATH}/${tool_name}"
+
+mkdir -p "${ASDF_DOWNLOAD_PATH}"
+
+if [[ $OSTYPE == "linux-"* ]]; then
+  operating_system="Linux"
+elif [[ $OSTYPE == "darwin"* ]]; then
+  operating_system="Darwin"
+fi
+
+download_url=$(get_download_url "${tool_name}" "$OSTYPE" "$(uname -m)" "${ASDF_INSTALL_VERSION}")
+
+readonly download_url
+
+if [[ -z $download_url ]]; then
+  echo "❌ Unable to download a suitable version of ${tool_name} for ${operating_system}, $(uname -m) and version ${ASDF_INSTALL_VERSION}" >&2
+  exit 1
+fi
+
+curl --silent --fail --location -o "${bin_path}" "${download_url}" || {
+  echo "❌ Failed to download the ${tool_name} package bundle from ${download_url}" >&2
+  exit 1
+}

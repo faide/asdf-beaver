@@ -1,0 +1,4 @@
+jq 1.6  # datasource=github-releases depName=stedolan/jq
+python system # use system python
+shellcheck 0.10.0 # datasource=github-releases depName=koalaman/shellcheck
+shfmt 3.11 # datasource=github-releases depName=mvdan/sh

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/../lib/utils.bash"
+
+check_installation_type
+
+tool_name=$(get_tool_name)
+
+readonly bin_path="${ASDF_DOWNLOAD_PATH}/${tool_name}-v${ASDF_INSTALL_VERSION}"
+readonly install_path="${ASDF_INSTALL_PATH}/bin/"
+
+# Move binary files into the bin directory.
+mv ${bin_path} ${install_path}
+chmod +x ${install_path}${bin_path}
