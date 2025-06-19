@@ -11,7 +11,7 @@ check_installation_type
 
 tool_name=$(get_tool_name)
 
-readonly bin_path="${ASDF_DOWNLOAD_PATH}/${tool_name}-v${ASDF_INSTALL_VERSION}"
+readonly bin_path="${ASDF_DOWNLOAD_PATH}/${tool_name}"
 readonly install_path="${ASDF_INSTALL_PATH}/bin/"
 
 # Move binary files into the bin directory.
