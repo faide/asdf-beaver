@@ -18,4 +18,4 @@ mkdir -p ${install_path}
 
 # Move binary files into the bin directory.
 mv ${bin_path} ${install_path}
-chmod +x ${install_path}${bin_path}
+chmod +x ${install_path}${tool_name}
