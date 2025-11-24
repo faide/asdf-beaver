@@ -12,14 +12,11 @@ tool_name=$(get_tool_name)
 project_url=$(get_project_url "${tool_name}")
 readonly project_url
 
-# SemVer sorting trick, see: https://github.com/stedolan/jq/issues/708
+# Parse releases API without jq - extract version numbers only
 curl -sSf "${project_url}/releases/" |
-  jq -r '
-    [(
-      .[] |
-      select(.upcoming_release == false) |
-      .name | sub("v"; "")
-    )] |
-    sort_by(split(".") | map(tonumber)) |
-    join(" ")
-  '
+  grep -o '"name":"[0-9][^"]*"' |
+  sed 's/"name":"//;s/"//' |
+  sed 'h; s/[+-]/./g; s/.p\([[:digit:]]\)/.z\1/; s/$/.z/; G; s/\n/ /' |
+  LC_ALL=C sort -t. -k 1,1 -k 2,2n -k 3,3n -k 4,4n -k 5,5n |
+  awk '{print $2}' |
+  xargs echo

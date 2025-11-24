@@ -16,30 +16,6 @@ get_tool_name() {
   echo "beaver"
 }
 
-find_download_in_release_json() {
-  local arg_release_json=$1
-  local arg_tool=$2
-  local arg_version=$3
-  local arg_architecture=$4
-  local arg_operating_system=$5
-
-  echo "Searching for name=${arg_tool}, version=${arg_version} architecture=${arg_architecture}, operating_system=${arg_operating_system}" >&2
-
-  jq -r -n \
-    --argjson json "${arg_release_json}" \
-    --arg tool "${arg_tool}" \
-    --arg version "${arg_version}" \
-    --arg arch "${arg_architecture}" \
-    --arg ostype "${arg_operating_system}" '
-    $json | [
-      .assets.links[] |
-      select(.name|ascii_downcase == "\($tool|ascii_downcase)_\($version|ascii_downcase)_\($ostype|ascii_downcase)_\($arch|ascii_downcase)")
-    ] |
-    first |
-    .direct_asset_url // ""
-  '
-}
-
 get_project_url() {
   local tool=$1
 
@@ -53,27 +29,14 @@ get_download_url() {
   local uname_m=$3
   local version=$4
 
-  local project_url
-  project_url=$(get_project_url "${tool}")
-
-  local release_url="${project_url}/releases/${version}"
-
-  release_json=$(curl --silent --fail "${release_url}")
-  readonly release_json
-
-  if [[ -z $release_json ]]; then
-    echo "Failed to download release information from ${release_url}" >&2
-    return 1
-  fi
-
   local operating_system
   local architecture
 
   # Pick OS.
   if [[ ${ostype} == "linux-"* ]]; then
-    operating_system="Linux"
+    operating_system="linux"
   elif [[ ${ostype} == "darwin"* ]]; then
-    operating_system="Darwin"
+    operating_system="darwin"
   fi
 
   # Pick architecture.
@@ -86,11 +49,17 @@ get_download_url() {
     ;;
   esac
 
-  download_url="$(find_download_in_release_json "$release_json" "$tool" "$version" "$architecture" "$operating_system")"
+  # Construct download URL directly (following asdf-plugin-template best practice)
+  # URL pattern: https://orus.io/api/v4/projects/3711/packages/generic/beaver/{version}/beaver_{version}_{os}_{arch}
+  local download_url="https://orus.io/api/v4/projects/3711/packages/generic/${tool}/${version}/${tool}_${version}_${operating_system}_${architecture}"
 
-  if [[ $architecture == "arm64" ]] && [[ -z $download_url ]]; then
-    # Fall back to x86_64 if an arm64 binary is unavailable.
-    download_url="$(find_download_in_release_json "$release_json" "$tool" "$version" "x86_64" "$operating_system")"
+  # Try arm64 first, fallback to x86_64 if needed
+  if [[ $architecture == "arm64" ]]; then
+    # Check if arm64 binary exists
+    if ! curl --silent --fail --head "$download_url" > /dev/null 2>&1; then
+      # Fall back to x86_64 if an arm64 binary is unavailable
+      download_url="https://orus.io/api/v4/projects/3711/packages/generic/${tool}/${version}/${tool}_${version}_${operating_system}_x86_64"
+    fi
   fi
 
   echo "$download_url"
